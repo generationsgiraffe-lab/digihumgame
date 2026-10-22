@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Algorithmic Blindspots: Between the Lines</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--ink:#e8e4d6;--dim:#9a9a8a;--hot:#e07a7a;--card:#15191b;--line:#41474a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{margin:0;height:100%;background:#000;color:var(--ink);font:16px/1.5 'IBM Plex Mono',ui-monospace,monospace;overflow:hidden}
+#c{position:fixed;inset:0;width:100%;height:100%;image-rendering:pixelated}
+#grain{position:fixed;inset:0;pointer-events:none;opacity:.1;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");animation:g .5s steps(2) infinite}
+@keyframes g{50%{transform:translate(-3px,2px)}}
+body.calm #grain{display:none}
+.ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px;background:#000;z-index:5}
+.ov h1{font-weight:600;font-size:clamp(1.2rem,4vw,2rem);letter-spacing:.08em;margin:.3em;transition:opacity 2s}
+button{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);padding:10px 16px;cursor:pointer}
+button:hover,button:focus-visible{outline:2px solid var(--hot)}button:disabled{opacity:.4;cursor:not-allowed}
+#menu{position:fixed;inset:auto 0 0 0;display:none;gap:16px;justify-content:space-between;padding:16px;z-index:3}
+.card{flex:1;max-width:420px;text-align:left;background:rgba(10,12,12,.85);padding:14px}
+.card b{display:block}.card span{color:var(--dim);font-size:.9rem}
+#pr{position:fixed;left:0;right:0;bottom:30%;text-align:center;text-shadow:0 0 4px #000,0 0 4px #000;pointer-events:none}
+#sub{position:fixed;left:50%;transform:translateX(-50%);bottom:8%;max-width:min(720px,92vw);background:rgba(0,0,0,.72);padding:6px 12px;text-align:center;display:none;pointer-events:none;z-index:4}
+#hint{position:fixed;top:8px;left:12px;font-size:.78rem;color:var(--dim);text-shadow:0 0 3px #000;z-index:2;max-width:60vw}
+#elp{position:fixed;top:8px;right:60px;width:140px;font-size:.78rem;display:none;z-index:2}
+#elp i{display:block;height:8px;background:var(--hot);width:100%}
+#gear{position:fixed;top:6px;right:8px;z-index:6;padding:4px 10px}
+#set{position:fixed;top:44px;right:8px;z-index:6;background:var(--card);border:1px solid var(--line);padding:12px;display:none;font-size:.85rem}
+#set label{display:block;margin:6px 0}
+#dlg{position:fixed;left:50%;transform:translateX(-50%);bottom:4%;width:min(760px,94vw);background:rgba(8,10,10,.92);border:1px solid var(--line);padding:14px;display:none;z-index:4}
+#dlg .pv{color:var(--dim);font-size:.88rem}#dlg .go{color:var(--dim);font-size:.8rem}
+#dlg button{display:block;width:100%;text-align:left;margin-top:6px}
+#ph{position:fixed;right:10px;top:40px;bottom:10px;width:min(340px,92vw);background:#f2f0ea;color:#1b1f23;border:4px solid #222;display:none;overflow:auto;z-index:4;font:15px/1.4 system-ui,sans-serif}
+#ph .top{display:flex;justify-content:space-between;padding:8px 10px;background:#1b1f23;color:#f2f0ea;position:sticky;top:0}
+#ph button{background:#ddd;color:#111;border:1px solid #888;padding:4px 8px;font:inherit;font-size:.8rem}
+.vid{background:#3b5360;color:#fff;margin:8px;padding:30px 14px 10px;font-weight:600;font-size:1.15rem}.vid small{display:block;font-weight:400;font-size:.78rem;margin-top:10px}
+.cm{margin:6px 10px;padding:6px 8px;border-bottom:1px solid #cfcac0}.cm small{display:block;color:#555}
+.rp{margin-left:30px;border-left:3px solid #c9a27a}.sh{background:#f5dede}
+.note{margin:6px 10px;padding:6px 8px;background:#e1ebf2;border-left:4px solid #3b6fa3;font-size:.88rem}
+.rec{margin:8px 10px;font-size:.82rem;color:#444}
+#tasks{position:fixed;left:12px;top:74px;background:rgba(8,10,10,.82);border:1px solid var(--line);padding:8px 12px;font-size:.82rem;z-index:2;max-width:270px}#tasks .d{color:var(--dim);text-decoration:line-through}
+@media(prefers-reduced-motion:reduce){#grain{animation:none}}
+</style></head>
+<body>
+<canvas id="c"></canvas><div id="grain"></div>
+<div id="hint"></div><div id="tasks"></div><div id="elp">Emotional Labor<i id="eb"></i></div>
+<div id="pr"></div><div id="sub" aria-live="polite"></div>
+<div id="dlg"></div><div id="ph"></div>
+<div class="ov" id="intro" style="display:flex"><button id="go">Click to begin (sound on)</button><h1 id="t1" style="opacity:0"></h1></div>
+<div class="ov" id="int"><h1 id="i1"></h1></div>
+<div class="ov" id="epi" style="align-items:center"><div id="et" style="max-width:640px;text-align:left"></div><button onclick="toMenu()">Return</button></div>
+<div id="menu">
+ <button class="card" onclick="start('john')"><b>JOHN — THE SHIELDED LENS</b><span>You have always had a place in the room. You rarely need to ask why.</span></button>
+ <button class="card" id="bt" style="display:none;text-align:center" onclick="epilogue()"><b>BETWEEN THE LINES</b></button>
+ <button class="card" onclick="start('jerni')"><b>JERNI — THE DECODED LENS</b><span>You have learned to notice what others can afford to ignore.</span></button>
+</div>
+<button id="gear" aria-label="Settings" onclick="set.style.display=set.style.display=='block'?'none':'block'">⚙</button>
+<div id="set"><label>Mouse sensitivity <input type="range" min=".3" max="2.5" step=".1" value="1" oninput="O.sens=+this.value"></label>
+<label><input type="checkbox" checked onchange="O.subs=this.checked"> Subtitles</label>
+<label><input type="checkbox" onchange="O.calm=this.checked;size()"> Reduce visual distortion</label>
+<label><input type="checkbox" onchange="O.save={};sv();location.reload()"> Reset saved progress</label></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=id=>document.getElementById(id),set=$('set'),cv=$('c');
+const O={sens:1,subs:true,calm:false,save:{}};
+try{O.save=JSON.parse(localStorage.getItem('ab3')||'{}')}catch(e){}
+const sv=()=>{try{localStorage.setItem('ab3',JSON.stringify(O.save))}catch(e){}};
+const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(70,1,.1,60);cam.rotation.order='YXZ';
+const R=new THREE.WebGLRenderer({canvas:cv,antialias:false});
+function size(){const k=O.calm?2:3;R.setSize(innerWidth/k|0,innerHeight/k|0,false);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();document.body.classList.toggle('calm',O.calm)}
+addEventListener('resize',size);size();R.shadowMap.enabled=true;R.shadowMap.type=THREE.BasicShadowMap;
+
+/* ---------- audio ---------- */
+let A;
+function aud(){if(A)return A;const c=new(window.AudioContext||window.webkitAudioContext)(),m=c.createGain();m.gain.value=.5;m.connect(c.destination);
+const f=c.createBiquadFilter();f.frequency.value=600;f.connect(m);const b=c.createBuffer(1,c.sampleRate*2,c.sampleRate),d=b.getChannelData(0);let l=0;
+for(let i=0;i<d.length;i++){l=(l+.02*(Math.random()*2-1))/1.02;d[i]=l*3.5}
+const s=c.createBufferSource();s.buffer=b;s.loop=true;const ng=c.createGain();s.connect(ng);ng.connect(f);s.start();
+const o=c.createOscillator(),og=c.createGain();o.connect(og);og.connect(f);o.start();return A={c,m,f,ng,og,o}}
+function amb(fq,n,hz,og){if(!A)return;A.f.frequency.value=fq;A.ng.gain.value=n;A.o.frequency.value=hz;A.og.gain.value=og}
+function blip(fr,d=.15,ty='sine',v=.15,dl=0){if(!A)return;const c=A.c,o=c.createOscillator(),g=c.createGain();o.type=ty;o.frequency.value=fr;
+const t=c.currentTime+dl;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(A.m);o.start(t);o.stop(t+d)}
+const notify=()=>{blip(880,.2);blip(1175,.3,'sine',.15,.18)};
+function muffle(on){if(!A)return;A.f.frequency.value=on?160:700;if(on)setTimeout(()=>muffle(false),7000)}
+
+/* ---------- world helpers ---------- */
+const M={};
+function mat(c,n=22){const k=c+n;if(!M[k]){const g=document.createElement('canvas');g.width=g.height=32;const x=g.getContext('2d');x.fillStyle=c;x.fillRect(0,0,32,32);
+for(let i=0;i<170;i++){x.fillStyle=`rgba(0,0,0,${Math.random()*n/100})`;x.fillRect(Math.random()*32|0,Math.random()*32|0,1+(Math.random()*3|0),1)}
+x.fillStyle='rgba(0,0,0,.14)';x.fillRect(0,0,32,1);x.fillRect(0,16,32,1);x.fillRect(0,0,1,32);x.fillStyle='rgba(255,255,255,.06)';x.fillRect(1,1,31,1);
+const t=new THREE.CanvasTexture(g);t.magFilter=t.minFilter=THREE.NearestFilter;M[k]=new THREE.MeshLambertMaterial({map:t})}return M[k]}
+let W,B,lights=[];const solids=[],acts=[];
+function clear(){if(W)scene.remove(W);W=new THREE.Group();scene.add(W);solids.length=acts.length=0;lights=[]}
+function bx(x,y,z,w,h,d,c,o={}){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),o.em?new THREE.MeshBasicMaterial({color:c}):mat(c));m.position.set(x,y+h/2,z);m.castShadow=!o.nc&&!o.em;m.receiveShadow=true;W.add(m);if(o.s)solids.push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2});return m}
+function act(m,label,fn){m.userData.a={label,fn};acts.push(m);return m}
+function lamp(x,y,z,c,i,r=12){const l=new THREE.PointLight(c,i,r);l.position.set(x,y,z);l.castShadow=lights.length===0;l.shadow.mapSize.set(512,512);l.shadow.bias=-.004;W.add(l);lights.push(l);return l}
+function shell(w,d,h,fc,wc,cc,fog){const N={nc:1};bx(0,-.1,0,w,.1,d,fc,N);bx(0,h,0,w,.1,d,cc,N);bx(0,0,-d/2,w,h,.1,wc,N);bx(0,0,d/2,w,h,.1,wc,N);bx(-w/2,0,0,.1,h,d,wc,N);bx(w/2,0,0,.1,h,d,wc,N);
+B={x0:-w/2+.3,x1:w/2-.3,z0:-d/2+.3,z1:d/2-.3};scene.fog=new THREE.FogExp2(fog,.05);scene.background=new THREE.Color(fog);W.add(new THREE.AmbientLight(0x8a8676,.9))}
+function tag(g,t,c){const k=document.createElement('canvas');k.width=128;k.height=32;const x=k.getContext('2d');x.fillStyle=c;x.fillRect(0,0,128,32);x.fillStyle='#111';x.font='bold 22px monospace';x.textAlign='center';x.fillText(t,64,24);
+const tx=new THREE.CanvasTexture(k);tx.magFilter=tx.minFilter=THREE.NearestFilter;const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,fog:false,depthTest:false}));sp.scale.set(1,.25,1);sp.position.y=2.35;sp.renderOrder=9;g.add(sp)}
+function person(sk,sh,pn,hr,k=0,tg){const g=new THREE.Group(),a=(w,h,d,x,y,z,c)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c));m.position.set(x,y+h/2,z);m.castShadow=m.receiveShadow=true;g.add(m);return m};
+a(.2,.8,.22,-.13,.08,0,pn);a(.2,.8,.22,.13,.08,0,pn);a(.22,.1,.3,-.13,0,.04,'#222');a(.22,.1,.3,.13,0,.04,'#222');
+g.torso=a(.52,.72,.3,0,.84,0,sh);a(.58,.1,.34,0,1.4,0,sh);a(.16,.62,.16,-.37,.84,0,sh);a(.16,.62,.16,.37,.84,0,sh);a(.13,.13,.13,-.37,.74,0,sk);a(.13,.13,.13,.37,.74,0,sk);
+a(.12,.1,.12,0,1.5,0,sk);a(.32,.34,.32,0,1.55,0,sk);
+for(const s of[-1,1]){a(.07,.05,.02,s*.08,1.72,.165,'#f2f2ee');a(.035,.04,.02,s*.08,1.725,.17,'#111');a(.09,.02,.02,s*.08,1.78,.165,hr)}
+a(.05,.07,.05,0,1.65,.17,sk);a(.1,.025,.02,0,1.6,.165,'#6a2f2a');
+if(k===1){a(.42,.16,.42,0,1.86,0,hr);a(.42,.45,.14,0,1.46,-.2,hr);a(.1,.3,.3,-.24,1.62,0,hr);a(.1,.3,.3,.24,1.62,0,hr);a(.36,.05,.36,0,1.82,0,'#d9a21b');a(.04,.09,.04,-.2,1.6,.02,'#d4af37');a(.04,.09,.04,.2,1.6,.02,'#d4af37')}
+else{a(.34,.1,.34,0,1.88,0,hr);a(.34,.3,.08,0,1.58,-.15,hr)}
+if(tg)tag(g,tg[0],tg[1]);W.add(g);return g}
+const JOHN=()=>person('#d9b79a','#2f4a73','#b5a47a','#6a5a3a',0,['JOHN','#9fb6c8']),JERN=()=>person('#7a4b32','#d9a21b','#2b3a55','#140d0a',1,['JERNI','#ffd24a']);
+
+/* ---------- state ---------- */
+const P={x:0,z:0,y:1.6,yaw:0,pit:0,sit:0};let me,mode='intro',S,phoneOn=false;
+const K={};let drag=0,stepD=0;
+const other=()=>O.save['d_'+(me==='john'?'jerni':'john')];
+const D=(a,b)=>other()?b:a;
+let st;function say(t,ms=3800){if(!O.subs)return;const s=$('sub');s.textContent=t;s.style.display='block';clearTimeout(st);st=setTimeout(()=>s.style.display='none',ms)}
+function hint(t){$('hint').textContent=t}
+function newState(){S={req:new Set(),t:0,ev:new Set(),elp:10,un:0,opened:0,more:0,done:0,fired:{}}}
+const TL={john:[['alarm','Turn off the alarm'],['coffee','Make coffee'],['cal','Check the calendar'],['keys','Pick up keys, wallet, phone'],['leave','Leave for the bus']],
+jerni:[['alarm','Turn off the alarm'],['food','Make breakfast'],['sched','Check your work schedule'],['bag','Take your work bag'],['leave','Leave for the bus']]};
+const BL=()=>[['look','Look at the other passengers'],['phone','Open your phone (F) after the notification'],['scroll',me==='john'?'Scroll the comments (Load more replies)':'Inspect 3 pieces of evidence'],['decide','Open “Decide what to do” in the phone'],['stop','Press the red stop button near the front']];
+function tasks(l){S.tl=l;drawT()}
+function drawT(){$('tasks').innerHTML='<b>To do</b>'+S.tl.map(([k,t])=>`<div class="${S.req.has(k)?'d':''}">${S.req.has(k)?'✓':'○'} ${t}</div>`).join('')}
+function task(k){S.req.add(k);if(S.tl)drawT()}
+const NEED={john:['alarm','coffee','cal','keys'],jerni:['alarm','food','sched','bag']};
+function door(x,z){const d=bx(x,0,z,1,2.2,.1,'#6b4a2f');act(d,'Leave for the bus',()=>{const miss=NEED[me].filter(k=>!S.req.has(k));
+ if(miss.length){say(me==='john'?'Something first. Keys, calendar, coffee… I’m forgetting a step.':'Not yet. I have a list for a reason.')}else toBus()})}
+
+/* ---------- John's home ---------- */
+function homeJ(){clear();shell(12,9,3,'#8a7d68','#b9ad93','#cfc6ad','#1c1a16');lamp(0,2.6,0,0xfff2cc,.9,16);lamp(-4,2.4,-1,0xffe0b0,.5,8);
+ bx(-1,0,-2.25,.2,3,4.5,'#b9ad93',{s:1});bx(-1,0,3.15,.2,3,2.7,'#b9ad93',{s:1});
+ bx(-4.5,0,-3,2.2,.6,3.2,'#6e7f7a',{s:1});bx(-4.5,.6,-4.3,1.2,.2,.5,'#d8d4c4');
+ bx(-3,0,-4.1,.6,.6,.6,'#5a4632',{s:1});const al=bx(-3,.6,-4.1,.3,.15,.2,'#d96b6b',{em:1});
+ act(al,'Turn off alarm',()=>{if(S.req.has('alarm'))return;task('alarm',0,4);al.material=mat('#444');say('Same morning. Same coffee. Same commute. I should check that meeting before I leave.')});
+ act(bx(-5.5,0,1,.8,2.2,2,'#5a4632',{s:1}),'Get dressed',()=>say('The navy jacket. Wednesday means the club.'));
+ act(bx(-5.92,1.5,-1.5,.05,.8,1.1,'#7f9aa3'),'Look at photograph',()=>say('Nantucket, July. The porch light is always on out there.'));
+ act(bx(-.88,1.5,-2,.05,.8,1,'#6f8a5f'),'Look at photograph',()=>say('Wednesday. I need to remember to confirm the tee time.'));
+ bx(4,0,-4,3,.95,.9,'#a89f88',{s:1});act(bx(4.8,.95,-4,.5,.5,.4,'#222',{s:1}),'Make coffee',()=>{task('coffee',0,4);blip(300,.5,'sawtooth',.05);say('Good beans. I never check what a bag costs.')});
+ act(bx(2.3,0,-4,1,2,.9,'#c9c9c0',{s:1}),'Open fridge',()=>say('Shelves full. Half of it will go bad before Friday. Fine.'));
+ act(bx(1,1.4,-4.45,.9,1,.05,'#e8e4d6'),'Check calendar',()=>{task('cal',0,4);say('Wed 1:20 tee time. Thu offsite. Fri flight to ACK. Dave: “Put you on the Meridian lunch list.”')});
+ bx(4.8,0,2,1.6,.75,.8,'#5a4632',{s:1});act(bx(4.8,.75,2,.7,.05,.5,'#333'),'Read message',()=>say('Dave: “Lunch with the Meridian people. I told them you’d say yes.”'));
+ act(bx(5.3,.75,2.2,.3,.03,.4,'#555'),'Look at tablet',()=>say('Renewals: $214 this month. Which one is that? Whatever.'));
+ bx(3,0,4.1,1.4,.9,.5,'#5a4632',{s:1});act(bx(3,.9,4.1,.4,.1,.3,'#d4af37'),'Pick up keys, wallet, phone',()=>{task('keys',0,4);say('Keys. Wallet. Phone. Out the door.')});
+ bx(0,0,-4.43,12,.12,.06,'#7a6d58',{nc:1});bx(2,.01,.3,4,.02,3,'#7a4f45',{nc:1});bx(5.94,1,-1,.04,1.2,2,'#a9c0cf',{em:1});bx(5.9,.9,-1,.08,.1,2.2,'#555',{nc:1});bx(5.9,2.2,-1,.08,.1,2.2,'#555',{nc:1});bx(-4.5,.01,1.2,2,.02,1.4,'#7b8a6a',{nc:1});bx(0,2.95,0,1.4,.05,.6,'#fff2cc',{em:1});bx(-5.8,1.2,-3.2,.3,.1,1.4,'#5a4632',{nc:1});bx(-2.2,0,3.6,.4,.5,.4,'#6a4a30',{s:1});bx(-2.2,.5,3.6,.5,.7,.5,'#4a6a3a');door(5,4.45);P.x=-4.5;P.z=-1;P.yaw=Math.PI*.5;amb(500,.12,55,.03)}
+
+/* ---------- Jerni's home ---------- */
+function homeE(){clear();shell(7,6,2.6,'#59616a','#7d8b91','#8e9a9a','#10161a');lamp(0,2.3,0,0xdfe8d8,.7,10);
+ bx(-2.5,0,-1.9,1.6,.5,2.3,'#6b5a52',{s:1});bx(-1.3,0,-2.6,.5,.5,.5,'#8b7a50',{s:1});const al=bx(-1.3,.5,-2.6,.12,.02,.22,'#e0e0d0',{em:1});
+ act(al,'Turn off alarm',()=>{if(S.req.has('alarm'))return;task('alarm',0,4);al.material=mat('#444');say('Rent first. Bus pass loaded. Lunch packed. All right. Let’s get through today.')});
+ bx(3,0,-1.5,.6,.9,2.2,'#a09a88',{s:1});act(bx(3,.9,-1.5,.5,.1,.4,'#222'),'Make breakfast',()=>{task('food',0,4);blip(200,.5,'sawtooth',.04);say('Oats and the last banana. Cheap, and it holds until noon.')});
+ act(bx(3.2,0,.4,.5,1.3,.6,'#c9c9c0',{s:1}),'Open fridge',()=>say('Grocery list on the door, prices penciled in. Two meals under five dollars.'));
+ act(bx(.5,1.2,-2.95,1.2,.9,.05,'#b89a6a'),'Check work schedule',()=>{task('sched',0,4);say('Clock-in 6:40. Closing Thursday, then opening Friday. Who builds a schedule like this?')});
+ bx(-.8,0,-2.5,1.2,.7,.6,'#5a4632',{s:1});act(bx(-.8,.7,-2.5,.3,.03,.2,'#333'),'Check bank and bills',()=>say('Balance $312. Rent $890 due Friday. Move $60 from savings.'));
+ act(bx(-1.8,.9,-2.9,.04,.3,.04,'#ddd'),'Phone charger',()=>say('The cable only works at this angle. Thirty-eight percent. Good enough.'));
+ act(bx(-3.45,1.4,1,.05,.3,.5,'#a0705a'),'Message from Tasha',()=>say('Tasha: “Saturday still on?? Bring the good speaker. DON’T be late 😂”'));
+ act(bx(-3.3,.9,-.5,.3,.4,.6,'#4a6a8a'),'Look at textbook',()=>say('Pharmacy tech prep. Chapter 4 by Thursday. One day I will be the one at the counter.'));
+ act(bx(-3.3,0,2.2,.6,.8,.6,'#8a6a40',{s:1}),'Take work bag',()=>{task('bag',0,4);say('Double-check everything. I can’t afford to come back for it.')});
+ act(bx(2.8,1.5,2.95,.2,.3,.05,'#e8d66b'),'Take transit pass',()=>say('Pass loaded through the 30th. Tight, but loaded.'));
+ bx(0,0,-2.93,7,.1,.05,'#4a5258',{nc:1});bx(.2,.01,.5,2.2,.02,1.6,'#8a5a4a',{nc:1});bx(3.44,1,1.9,.04,1,1.2,'#9ab0bb',{em:1});bx(3.4,.95,1.9,.08,.06,1.4,'#444',{nc:1});bx(-3.3,1.9,-1.5,.3,.05,1.6,'#6a5a48',{nc:1});bx(2.5,0,2.4,.4,.5,.4,'#8a5a3a',{s:1});bx(2.5,.5,2.4,.5,.6,.5,'#4a6a3a');door(1.2,2.95);P.x=-2.5;P.z=1.2;P.yaw=Math.PI*.3;amb(1300,.3,48,.03)}
+
+/* ---------- bus ---------- */
+const SEATS=[-5.5,-4.2,-2.9,-1.6,-.3,1,2.3,3.6,4.9,6.2];let posts=[];
+function bus(){clear();shell(3.1,16,2.3,'#4a4d4a','#7c8a8f','#b9c2b8','#12171a');scene.fog.density=.045;
+ lamp(0,2.1,-3,0xdfeadb,.9,10);lamp(0,2.1,4,0xdfeadb,.7,10);for(let z=-6;z<=6;z+=4)bx(0,2.2,z,.3,.05,2,'#e6f2d8',{em:1});
+ bx(0,.01,0,.5,.02,15.6,'#6a6a58',{nc:1});for(const sd of[-.4,.4])bx(sd,2.0,0,.04,.04,15.4,'#bbb',{nc:1});
+ posts=[];for(const sd of[-1,1]){for(let z=-6.5;z<=6.5;z+=2.6){bx(sd*1.49,1,z,.03,.7,1.6,'#9ab0b4',{em:1});bx(sd*1.47,.62,z,.08,.06,1.8,'#555',{nc:1});bx(sd*1.47,1.7,z,.08,.06,1.8,'#555',{nc:1})}for(let i=0;i<10;i++)posts.push(bx(sd*1.47,1,-8+i*1.6,.04,.7,.1,'#1c2326',{em:1}))}
+ act(bx(1.49,1.9,-3.5,.03,.3,1,'#d9c9a0'),'Read advertisement',()=>say(D('Halsey Credit Union: “Home loans, made simple.”','“Home loans, made simple.” Simple for whom?')));
+ act(bx(0,1.4,-7.95,1,.7,.05,'#c8d8c0'),'Read route map',()=>say('Route 14: Alder & 4th → Halsey Terminal.'));
+ act(bx(-1.49,1.1,3,.03,.7,1.6,'#9ab0b4'),'Look out the window',()=>{say(me==='john'?'The streets I know. Not the ones I look at.':'Three stops from my shift. Watching the street for a minute helps.');if(me==='jerni'&&!S.win){S.win=1;S.elp=Math.min(10,S.elp+1);$('eb').style.width=S.elp*10+'%'}});
+ act(bx(.4,1.2,-5.95,.1,.14,.06,'#e03030',{em:1}),'Press the stop button',()=>{if(!S.canStop){say('Not yet. Finish what’s on your list first.');return}interlude()});
+ for(const z of SEATS)for(const sd of[-1,1]){const x=sd*1.05,occ=(sd<0&&(z===-5.5||z===-1.6))||(sd>0&&(z===2.3||z===-2.9||z===4.9));
+  bx(x,0,z,.8,.5,.8,'#3f5a63',{s:1});bx(x,.5,z+.4,.8,.7,.1,'#3f5a63',{s:1});bx(x,1.2,z+.4,.5,.15,.1,'#35505a');
+  if(!occ)act(bx(x,.5,z,.7,.05,.7,'#4d6b75'),'Sit',()=>{P.x=x;P.z=z;P.y=1.2;P.sit=1;say('You sit. The fluorescent hum gets louder.')})}
+ for(let z=-6;z<=6;z+=3)for(const sd of[-.4,.4])bx(sd,0,z,.05,2.3,.05,'#aaa');
+ const sit=(g,x,z,r=Math.PI)=>{g.position.set(x,.35,z);g.rotation.y=r;solids.push({x0:x-.4,x1:x+.4,z0:z-.4,z1:z+.4});return g};
+ const pj=sit(JOHN(),-1.05,-5.5,Math.PI-.3),pe=sit(JERN(),1.05,2.3,Math.PI+.35);
+ const spot=(x,z,c)=>{const l=new THREE.PointLight(c,.6,3.5);l.position.set(x,1.9,z);W.add(l)};
+ if(me==='jerni'){pe.visible=false;act(pj.torso,'Look at John',()=>say(D('A man in a navy jacket, reading his phone. Relaxed.','John. His shoulders are loose. You know now what his screen is telling him.')));spot(-1.05,-5.2,0xcfe0ff)}
+ else{pj.visible=false;act(pe.torso,'Look at Jerni',()=>say(D('A woman in a mustard cardigan, work lanyard on, looking at her phone.','Jerni. You know now what her screen was showing her.')));spot(1.05,2.1,0xffd27a)}
+ const l1=sit(person('#c8a07e','#7a5a3a','#444','#555',2),-1.05,-1.6),r1=sit(person('#e0c0a0','#8a4a4a','#333','#222',2),1.05,-2.9),r2=sit(person('#a07a5a','#555a60','#333','#bbb',2),1.05,4.9);
+ act(l1.torso,'Look at passenger',()=>say(D('He’s laughing at something on his phone.','He’s laughing. You’ve seen the other version of what he’s reading.')));
+ act(r1.torso,'Look at passenger',()=>say(D('She’s filming the aisle for a short video.','A clip of an ordinary bus. You know how fast ordinary things get a caption.')));
+ act(r2.torso,'Look at passenger',()=>say('She holds her bag on her knees. No screen. Somewhere else entirely.'));
+ P.x=0;P.z=-7;P.yaw=Math.PI;P.pit=0;P.y=1.6;P.sit=0;amb(700,.4,38,.09);
+ S.ev=new Set();S.evq=[[5,()=>{say('[A passenger laughs at something on his phone.]');blip(500,.08,'square',.05);blip(620,.08,'square',.05,.12)}],
+ [12,()=>{say('Stop announcement: “Next stop, Alder and Fourth.”');blip(660,.4,'sine',.15);blip(520,.5,'sine',.15,.4)}],
+ [18,()=>{say('[Someone raises a phone and films the aisle.]')}],
+ [24,()=>{notify();S.ring=1;say('[A phone notification chimes. Press F to open your phone.]')}]]}
+
+/* ---------- feed data (one dataset, two ranking rules) ---------- */
+const POSTS=[
+{u:'tbell_golf',t:'People are reading way too much into this.',l:'2.1K'},
+{u:'mattyb_',t:'It’s literally just a question.',l:'1.8K'},
+{u:'susan.reads',t:'Can’t we talk about anything anymore?',l:'1.2K'},
+{u:'jakeofalltrades',t:'Everyone needs to relax 😂',l:'980'},
+{u:'newt_nora',t:'Honestly not sure who this is aimed at. Can someone explain?',l:'412'},
+{h:1,u:'ho_meowner',t:'We all know who they mean.',l:'3.3K',un:1,k:'gap'},
+{h:1,p:1,u:'ridgeline_dad',t:'Exactly. They don’t have to say it anymore.',l:'1.1K',un:1},
+{h:1,p:1,u:'lenoir_w',t:'Look at the accounts posting the same phrase.',l:'64',un:1},
+{h:1,u:'newacct_6',t:'the usual crowd again 🙄',l:'890',un:1,k:'phrase'},
+{h:1,n:1,t:'Context: This expression has been used in several previous discussions to invoke racial stereotypes without stating them directly.',un:2},
+{h:1,u:'oldstreet_52',t:'Some of us grew up here. We know what “belonging” used to mean on this street.',l:'1.4K',un:1,k:'hist'},
+{h:1,n:1,t:'System note: 6 of these accounts were created this week and posted near-identical replies within minutes.',un:2,k:'acct'}];
+const EVD={gap:'Public vs. replies: the top comments are jokes; the replies say it out loud.',phrase:'“the usual crowd” appears in 3 related posts from 11 accounts in two hours.',hist:'“Neighborhood character” and “belonging” language appeared in mid-century housing covenants that excluded Black families without naming race.',acct:'6 of these accounts are new this week and post near-identical replies.'};
+function feed(){const J=me==='john',L=J?S.un:9,ph=$('ph');
+ let h=`<div class="top"><b>current</b><button onclick="togglePh()">close</button></div><div class="vid">“Why does everyone suddenly want to make everything about belonging?”<small>@maren.lyle · ♥ 48.2K · 3,912 comments · 6.4K reposts<br>Recommended: ${J?'because you liked “Common-sense takes #12”':'because you watched “Local history: who built this street?”'}</small></div>`;
+ if(J&&L)h+=`<div class="note">Shown on Jerni’s screen. Not in your feed.</div>`;
+ if(!J)h+=`<div class="note"><b>Evidence ${S.ev.size}/4</b><br>${[...S.ev].map(k=>'• '+EVD[k]).join('<br>')||'Inspect comments that look coordinated.'}</div>`;
+ for(const p of POSTS){if(J&&p.h&&L<p.un)continue;
+  if(p.n){h+=`<div class="note">${p.t}${!J&&p.k&&!S.ev.has(p.k)?`<br><button onclick="ins('${p.k}')">Inspect</button>`:''}</div>`;continue}
+  h+=`<div class="cm ${p.p?'rp':''} ${J&&p.h?'sh':''}"><b>@${p.u}</b><br>${p.t}<small>♥ ${p.l}</small>${!J&&p.k&&!S.ev.has(p.k)?`<button onclick="ins('${p.k}')">Inspect</button>`:''}</div>`}
+ if(J){for(let i=0;i<S.more;i++)h+=`<div class="cm"><b>@${['kyle_h','dee.p','tom_ok'][i%3]}</b><br>${['lol this thread 😂','same, honestly','ok the golf part tho'][i%3]}<small>♥ ${40+i}</small></div>`;
+  h+=`<div class="cm"><button onclick="more()">Load more replies (38)</button></div><div class="rec">Up next for you: “Slow-mo golf swing” · “Why HOA rules are out of control” · “Common-sense takes #13”</div>`}
+ else h+=`<div class="rec">Up next: “Rent vs. buy: the math” · “Local history: who built this street?”</div>`;
+ if(S.ring&&!S.decided)h+='<div class="cm"><button onclick="decide()">Decide what to do</button></div>';ph.innerHTML=h}
+function ins(k){S.ev.add(k);if(S.ev.size>=3)task('scroll');feed();say('Evidence added.')}
+function more(){S.more++;task('scroll');feed();say('[More replies. All similar.]')}
+function togglePh(){if(!S.ring&&mode==='bus'){say('No new notifications yet.');return}phoneOn=!phoneOn;$('ph').style.display=phoneOn?'block':'none';if(phoneOn){S.opened=1;task('phone');document.exitPointerLock&&document.exitPointerLock();feed()}}
+
+/* ---------- dialogue ---------- */
+let DL=null;
+function talk(lines,ch,end){mode='dlg';DL={lines,ch,end,i:0,pv:''};if(phoneOn)togglePh();$('dlg').style.display='block';adv()}
+function adv(){const d=DL,b=$('dlg');if(d.i<d.lines.length){const[w,t]=d.lines[d.i++];b.innerHTML=`<div class="pv">${d.pv}</div><div><b>${w}:</b> ${t}</div><div class="go">[E / click]</div>`;d.pv=`${w}: ${t}`;return}
+ if(d.ch){d.choosing=1;b.innerHTML=`<div class="pv">${d.pv}</div>`+d.ch.map((c,i)=>`<button ${c.dis?'disabled':''} onclick="pick(${i})">${i+1}. ${c.t}</button>`).join('');return}
+ b.style.display='none';mode='bus';const e=d.end;DL=null;e&&e()}
+function pick(i){const c=DL.ch[i];if(!c||c.dis)return;DL.ch=null;c.f()}
+$('dlg').addEventListener('click',e=>{if(DL&&!DL.choosing&&e.target.tagName!=='BUTTON')adv()});
+const fin=()=>{task('decide');S.canStop=1;say('Stop announcement: “Halsey Terminal is next.” Press the red stop button near the front when you’re ready.',8000);blip(660,.4);hint('Press the red stop button near the front pole when you’re ready.')}
+function decide(){if(S.decided||!S.ring)return;S.decided=1;me==='john'?decideJ():decideE()}
+function decideJ(){talk([['You','The comments are mostly people joking around. Aren’t they?'],['You','The app says 3,912 comments. You’ve seen about a dozen.'],['You','Someone out there calls this a dog whistle, and you can’t see why. That doesn’t prove they’re wrong.']],
+ [{t:'“If it were really there, I’d have seen it.”',f:()=>jr('defensive')},{t:'“Maybe my feed isn’t showing me everything.”',f:()=>jr('humble')},{t:'“Let me look past my own feed.”',f:()=>jr('curious')}])}
+function jr(k){O.save.fj=k;sv();const T={defensive:[['You','If it were really there, I’d have seen it.'],['You','(Your feed decides what you would see. That isn’t the same as what exists.)']],
+ humble:[['You','Maybe my feed isn’t showing me everything.'],['You','(A few collapsed replies open. Not the whole thread, but more than before.)']],
+ curious:[['You','Let me look past my own feed.'],['You','(You open the full thread. Hidden replies and a context note appear. Some are hard to read.)']]}[k];
+ S.un=k==='defensive'?0:k==='humble'?1:2;talk(T,null,()=>{if(S.un){muffle(true);say('[The room sounds far away. The feed changes.]');blip(70,2,'sawtooth',.06);togglePh()}fin()})}
+function decideE(){talk([['You','The top comments are jokes. The replies underneath say it out loud: “We all know who they mean.”'],['You','You could explain it, post the evidence, or log off. Whatever you choose, you still have a 6:40 shift.']],[
+ {t:`Write a detailed reply explaining it. (−3 ELP)${S.elp<3?' — too drained':''}`,dis:S.elp<3,f:()=>je('explained',3,[['You','You write four paragraphs about “belonging,” housing covenants and coded language.'],['You','Replies arrive fast: “It’s just a question.” “You’re reading into it.”'],['You','You answered, and it cost you. Not everyone is ready to hear it, and that is not your failure.']])},
+ {t:`Post the evidence: phrases, new accounts, history. (−1 ELP)${S.ev.size<3?' — needs 3 pieces of evidence':''}`,dis:S.ev.size<3,f:()=>je('evidence',1,[['You','You pin three screenshots and one line: “Same phrase, new accounts, same targets.”'],['You','A few people reply: “Wait… I didn’t see that.” Others keep scrolling. It’s out there now.']])},
+ {t:'Log off for now. (+2 ELP)',f:()=>je('declined',-2,[['You','You close the thread. You don’t owe the internet a lecture.'],['You','Tasha’s message is still waiting. Saturday is still on.']])}])}
+function je(k,c,L){O.save.fe=k;sv();S.elp=Math.max(0,Math.min(10,S.elp-c));$('eb').style.width=S.elp*10+'%';talk(L,null,fin)}
+
+/* ---------- flow ---------- */
+function toBus(){task('leave');mode='bus';fade(()=>{newBusState();bus();hint('Bus · Route 14 · WASD or arrow keys move · drag to look · F phone');tasks(BL())})}
+function newBusState(){S.t=0;S.fired={};S.endT=0;S.ring=0;S.decided=0;S.canStop=0;S.opened=0}
+function fade(f){const o=$('int');o.style.display='flex';$('i1').textContent='';setTimeout(()=>{f();o.style.display='none'},500)}
+function start(who){me=who;newState();$('menu').style.display='none';aud();$('elp').style.display=who==='jerni'?'block':'none';$('eb').style.width='100%';
+ fade(()=>{mode='morning';who==='john'?homeJ():homeE();hint('WASD or arrow keys move · drag the mouse (or click to capture it) to look · E interact · F phone on the bus');tasks(TL[who]);say(who==='john'?'7:02. Soft light through the blinds.':'5:48. The radiator is already knocking.')})}
+function interlude(){mode='int';const o=$('int'),h=$('i1');o.style.display='flex';phoneOn=false;$('ph').style.display='none';$('sub').style.display='none';h.style.opacity=0;h.textContent='';
+ notify();setTimeout(()=>{h.textContent='THE POST DID NOT CHANGE.';h.style.opacity=1},1200);setTimeout(()=>h.style.opacity=0,4200);setTimeout(()=>{h.textContent='YOUR FEED DID.';h.style.opacity=1},5600);
+ setTimeout(()=>{O.save['d_'+me]=1;sv();o.style.display='none';toMenu()},8800)}
+let figs;
+function toMenu(){mode='menu';$('epi').style.display='none';$('elp').style.display='none';$('ph').style.display='none';hint('');clear();scene.fog=new THREE.FogExp2(0x0a0a0a,.08);scene.background=new THREE.Color(0x0a0a0a);W.add(new THREE.AmbientLight(0x555048,.9));
+ bx(-3.2,-.1,0,4,.1,3.4,'#8a7d68');bx(-3.2,0,-1.7,4,2.6,.1,'#b9ad93');bx(-5.2,0,0,.1,2.6,3.4,'#b9ad93');bx(-4.4,0,-1.1,.8,.5,.6,'#6e7f7a');
+ bx(3.2,-.1,0,4,.1,3.4,'#59616a');bx(3.2,0,-1.7,4,2.6,.1,'#7d8b91');bx(5.2,0,0,.1,2.6,3.4,'#7d8b91');bx(4.5,0,-1,.9,1.2,.5,'#8a6a40');
+ lamp(-3.2,2.3,.5,0xffe0b0,1.2,7);lamp(3.2,2.3,.5,0xc8d8e8,.9,6);
+ const a=JOHN(),b=JERN();a.position.set(-3.2,0,-.5);b.position.set(3.2,0,-.5);figs=[a,b];
+ if(O.save.d_john){a.rotation.y=2.6;a.torso.material=mat('#55666b')}if(O.save.d_jerni){b.rotation.y=-2.6;b.torso.material=mat('#3c4a48')}
+ $('menu').style.display='flex';$('bt').style.display=O.save.d_john&&O.save.d_jerni?'block':'none';amb(300,.35,42,.06)}
+function epilogue(){const j={defensive:'John tells himself the comments were just jokes. They were, the ones he was shown.',humble:'John opens his phone and scrolls past the first page for the first time.',curious:'John keeps the thread open. He doesn’t know what to do with it yet. That is at least honest.'}[O.save.fj]||'John steps off, phone in hand.';
+ const e={explained:'Jerni spent what she had explaining. She still has a shift to work.',evidence:'Jerni showed what she had gathered. Whether it lands is not hers to carry.',declined:'Jerni kept her energy. The day is long, and Saturday with Tasha is real.'}[O.save.fe]||'Jerni steps off and heads to work.';
+ $('et').innerHTML=`<p>Halsey Terminal. The doors open. Same bus, same stop, one curb.</p><p>${j}</p><p>${e}</p><p>They don’t agree, and no one is fixed by one conversation.</p><p><b>The post did not change. Your feed did. When someone tells you there is more than you can see, what do you do?</b></p>`;$('epi').style.display='flex'}
+
+/* ---------- input ---------- */
+addEventListener('keydown',e=>{K[e.code]=1;if(e.code.startsWith('Arrow'))e.preventDefault();if(e.code==='KeyE'&&!e.repeat){if(mode==='dlg'&&DL&&!DL.choosing)adv();else if(tgt){tgt.userData.a.fn();if(mode==='bus'&&/^Look at/.test(tgt.userData.a.label))task('look')}}
+ if(e.code==='KeyF'&&mode==='bus')togglePh();if(mode==='dlg'&&DL&&DL.choosing&&DL.ch&&e.key>='1'&&e.key<='3')pick(+e.key-1)});
+addEventListener('keyup',e=>K[e.code]=0);
+cv.addEventListener('mousedown',()=>{drag=1;if(['morning','bus'].includes(mode)&&!phoneOn&&cv.requestPointerLock)try{cv.requestPointerLock()}catch(e){}});
+addEventListener('mouseup',()=>drag=0);
+addEventListener('mousemove',e=>{if((document.pointerLockElement===cv||drag)&&['morning','bus'].includes(mode)){P.yaw-=(e.movementX||0)*.0022*O.sens;P.pit=Math.max(-1.2,Math.min(1.2,P.pit-(e.movementY||0)*.0022*O.sens))}});
+$('go').onclick=()=>{aud();amb(300,.35,42,.06);$('go').style.display='none';const t=$('t1');t.style.opacity=1;t.textContent='YOU SEE WHAT YOU ARE SHOWN.';
+ setTimeout(()=>t.style.opacity=0,3800);setTimeout(()=>{t.textContent='CHOOSE YOUR PERSPECTIVE.';t.style.opacity=1},6200);setTimeout(()=>{$('intro').style.display='none';toMenu()},9000)};
+
+/* ---------- loop ---------- */
+const rc=new THREE.Raycaster();rc.far=2.6;let tgt=null,last=performance.now();
+function blocked(x,z){if(x<B.x0||x>B.x1||z<B.z0||z>B.z1)return 1;const r=.25;return solids.some(s=>x>s.x0-r&&x<s.x1+r&&z>s.z0-r&&z<s.z1+r)}
+function tick(dt,n){
+ if(mode==='menu'){cam.position.set(Math.sin(n/4000)*.6,1.4,4.6);cam.lookAt(0,1,0);figs.forEach((f,i)=>f.position.y=Math.sin(n/900+i)*.01);return}
+ if(mode==='int'||!W)return;
+ if(mode!=='dlg'){const dx=((K.KeyD||K.ArrowRight)?1:0)-((K.KeyA||K.ArrowLeft)?1:0),dz=((K.KeyS||K.ArrowDown)?1:0)-((K.KeyW||K.ArrowUp)?1:0);
+  if(K.KeyJ)P.yaw+=1.6*dt*O.sens;if(K.KeyL)P.yaw-=1.6*dt*O.sens;if(K.KeyI)P.pit=Math.min(1.2,P.pit+dt);if(K.KeyK)P.pit=Math.max(-1.2,P.pit-dt);
+  if(dx||dz){if(P.sit){P.sit=0;P.y=1.6;P.x=Math.sign(P.x)*.2}const l=Math.hypot(dx,dz),sp=2.2*dt/l,c=Math.cos(P.yaw),s=Math.sin(P.yaw),vx=(dx*c+dz*s)*sp,vz=(-dx*s+dz*c)*sp;
+   if(!blocked(P.x+vx,P.z))P.x+=vx;if(!blocked(P.x,P.z+vz))P.z+=vz;stepD+=sp;if(stepD>.75){stepD=0;blip(70+Math.random()*25,.07,'triangle',.07)}}}
+ cam.position.set(P.x,P.y+Math.sin(stepD*4)*.01,P.z);cam.rotation.set(P.pit,P.yaw,0);
+ rc.setFromCamera({x:0,y:0},cam);const h=rc.intersectObjects(acts)[0];tgt=h&&h.object.userData.a&&mode!=='dlg'?h.object:null;
+ $('pr').textContent=tgt?'[E] '+tgt.userData.a.label:'';
+ if(mode==='bus'||mode==='dlg'){S.t+=dt;for(const q of S.evq||[])if(!q.d&&S.t>q[0]){q.d=1;q[1]()}
+  posts.forEach(p=>{p.position.z+=dt*7;if(p.position.z>8)p.position.z-=16});lights.forEach((l,i)=>l.intensity=.85+(Math.random()<.04?-.4:0)+Math.sin(n/300+i)*.04);
+  if(S.endT&&S.t>S.endT){S.endT=0;interlude()}}}
+function loop(n){const dt=Math.min(.05,(n-last)/1000);last=n;try{tick(dt,n)}catch(e){console.error(e)}R.render(scene,cam);requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script></body></html>
